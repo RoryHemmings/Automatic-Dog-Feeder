@@ -1,0 +1,20 @@
+{
+    "times": [1000],
+    "containers": [
+        {
+            "name": "dog0",
+            "food_amount": 0,
+            "food_type": "small"
+        },
+        {
+            "name": "dog1",
+            "food_amount": 0,
+            "food_type": "small"
+        },
+        {
+            "name": "dog2",
+            "food_amount": 0,
+            "food_type": "small"
+        }
+    ]
+}
