@@ -1,2 +1,2 @@
 # Automatic Dog Feeder
- Advanced robotic doog feeding system with customized web controls 
+ Advanced robotic dog feeding system with customized web controls 
