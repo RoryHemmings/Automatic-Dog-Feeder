@@ -2,7 +2,6 @@ let width, height;
 const numContainerPanels = 3;
 
 let guiManager;
-let containerPanels = [];
 
 let primary_font;
 
@@ -56,6 +55,52 @@ const colorSchemes = {
         text: colors.WHITE,
     }
 };
+
+class guiObject {
+    constructor(x, y, width, height, callback) {
+        this._x = x;
+        this._y = y;
+        this._width = width;
+        this._height = height;
+
+        this._callback = callback;
+    }
+
+    _genXCoord(perc) {
+        return this._x + (this._width * perc);
+    }
+
+    _genYCoord(perc) {
+        return this._y + (this._height * perc);
+    }
+
+    _genWidth(perc) {
+        return this._width * perc;
+    }
+
+    _genHeight(perc) {
+        return this._height * perc;
+    }
+
+    isHovered() {
+        if (mouseX >= this._x && mouseX <= (this._x + this._width) && mouseY >= this._y && mouseY <= (this._y + this._height)) {
+            return true;
+        }
+        return false;
+    }
+
+    onClick() {
+        if (this.isHovered()) {
+            this._callback(this);
+        }
+    }
+
+    onPress() { }
+    onRelease() { }
+
+    update() { }
+    draw() { }
+}
 
 class SliderHandle {
     constructor(parent, x, y, w, h, color, inverted = false) {
@@ -113,13 +158,10 @@ class SliderHandle {
     }
 }
 
-class Slider {
+class Slider extends guiObject {
     constructor(x, y, height, callback, colorScheme, position,
         handleWidth, handleHeight) {
-        this._x = x;
-        this._y = y;
-        this._height = height;
-        this._callback = callback;
+        super(x, y, 4, height, callback);
         this._position = position;
 
         this._colorScheme = colorScheme;
@@ -127,7 +169,9 @@ class Slider {
         this._sliderHandle = new SliderHandle(this, x, y, handleWidth, handleHeight, colorScheme.contrast);
     }
 
-    onClick() {
+    onClick() { }
+
+    onPress() {
         this._sliderHandle.isClicked();
     }
 
@@ -165,36 +209,15 @@ class Slider {
 }
 
 
-class Button {
+class Button extends guiObject {
     constructor(customText, x, y, width, height, callback,
         colorScheme, textSize) {
-        this._x = x;
-        this._y = y;
-        this._width = width;
-        this._height = height;
-        this._callback = callback;
+        super(x, y, width, height, callback);
 
         this._colorScheme = colorScheme;
 
         this._text = customText;
         this._textSize = textSize;
-    }
-
-    isHovered() {
-        if (mouseX >= this._x && mouseX <= (this._x + this._width) && mouseY >= this._y && mouseY <= (this._y + this._height)) {
-            return true;
-        }
-        return false;
-    }
-
-    onClick() {
-        if (this.isHovered()) {
-            this._callback(this);
-        }
-    }
-
-    update() {
-
     }
 
     draw() {
@@ -212,18 +235,14 @@ class Button {
         textAlign(CENTER, CENTER);
         textSize(this._textSize);
         fill(this._colorScheme.text);
-        text(this._text, this._x + (this._width / 2), this._y + (this._height / 2));
+        text(this._text, this._genXCoord(0.5), this._genYCoord(0.5));
         pop();
     }
 }
 
-class Switch {
+class Switch extends guiObject {
     constructor(option0, option1, x, y, width, height, callback, colorScheme, textSize) {
-        this._x = x;
-        this._y = y;
-        this._width = width;
-        this._height = height;
-        this._callback = callback;
+        super(x, y, width, height, callback);
 
         this._colorScheme = colorScheme;
         this._textSize = textSize;
@@ -233,22 +252,11 @@ class Switch {
         this._option1 = option1;
     }
 
-    isHovered() {
-        if (mouseX >= this._x && mouseX <= (this._x + this._width) && mouseY >= this._y && mouseY <= (this._y + this._height)) {
-            return true;
-        }
-        return false;
-    }
-
     onClick() {
         if (this.isHovered()) {
             this._currentOption = (this._currentOption) ? 0 : 1;
             this._callback(this);
         }
-    }
-
-    update() {
-
     }
 
     draw() {
@@ -267,7 +275,7 @@ class Switch {
         if (this._currentOption) {
             rect(this._x, this._y, this._width / 2, this._height, 15);
         } else {
-            rect(this._x + (this._width * 0.5), this._y, this._width / 2, this._height, 15);
+            rect(this._genXCoord(0.5), this._y, this._width / 2, this._height, 15);
         }
 
         let t = (this._currentOption) ? this._option1 : this._option0;
@@ -275,7 +283,7 @@ class Switch {
 
         fill(this._colorScheme.text);
         textSize(16);
-        text(t, x, this._y + (this._height * 0.5));
+        text(t, x, this._genYCoord(0.5));
 
         pop();
     }
@@ -291,44 +299,26 @@ class Switch {
 
 class GuiManager {
     constructor() {
-        this._sliders = [];
-        this._buttons = [];
-        this._switches = [];
+        this._guiObjects = [];
     }
 
     update() {
-        this._buttons.forEach(b => {
-            b.update();
-        })
-
-        this._sliders.forEach(s => {
-            s.update();
-        });
-
-        this._switches.forEach(s => {
-            s.update();
+        this._guiObjects.forEach(obj => {
+            obj.update();
         });
     }
 
     draw() {
-        this._buttons.forEach(b => {
-            b.draw();
-        })
-
-        this._sliders.forEach(s => {
-            s.draw();
+        this._guiObjects.forEach(obj => {
+            obj.draw();
         });
-
-        this._switches.forEach(s => {
-            s.draw();
-        })
     }
 
     createCustomSlider(x, y, height, callback, colorScheme = colorSchemes.RED, position = 0.0,
         handleWidth = 50, handleHeight = 20) {
 
         let slider = new Slider(x, y, height, callback, colorScheme, position, handleWidth, handleHeight);
-        this._sliders.push(slider);
+        this._guiObjects.push(slider);
         return slider;
     }
 
@@ -336,7 +326,7 @@ class GuiManager {
         colorScheme = colorSchemes.RED, textSize = 30) {
 
         let button = new Button(customText, x, y, width, height, callback, colorScheme, textSize);
-        this._buttons.push(button);
+        this._guiObjects.push(button);
         return button;
     }
 
@@ -344,7 +334,7 @@ class GuiManager {
         colorScheme = colorSchemes.RED, textSize = 16) {
 
         let s = new Switch(option0, option1, x, y, width, height, callback, colorScheme, textSize);
-        this._switches.push(s);
+        this._guiObjects.push(s);
         return s;
     }
 
@@ -356,51 +346,40 @@ class GuiManager {
     }
 
     onClick() {
-        this._buttons.forEach(b => {
-            b.onClick();
-        });
-
-        this._switches.forEach(s => {
-            s.onClick();
+        this._guiObjects.forEach(obj => {
+            obj.onClick();
         })
     }
 
     onPress() {
-        this._sliders.forEach(s => {
-            s.onClick();
+        this._guiObjects.forEach(obj => {
+            obj.onPress();
         });
     }
 
     onRelease() {
-        this._sliders.forEach(s => {
-            s.onRelease();
+        this._guiObjects.forEach(obj => {
+            obj.onRelease();
         });
+    }
+
+    addGuiObject(obj) {
+        this._guiObjects.push(obj);
     }
 }
 
-class Diagram {
+class Diagram extends guiObject {
     constructor(x, y, width, height, maxAngle = 45) {
-        this._x = x;
-        this._y = y;
-        this._width = width;
-        this._height = height;
+        super(x, y, width, height, () => {});
 
         this._maxAngle = maxAngle;
         this._angle = 0;
     }
 
-    updatePosition(pos) {
-        this._angle = pos * this._maxAngle;
-    }
-
-    update() {
-
-    }
-
     draw() {
         push();
         fill(colors.GOLD);
-        text(round(this._maxAngle - this._angle) + '°', this._x - this._width * 0.1, this._y + this._height * 0.7);
+        text(round(this._maxAngle - this._angle) + '°', this._genXCoord(0.1), this._genYCoord(0.7));
         translate(this._x, this._y);
         rotate(radians(45));
         stroke(colors.GOLD);
@@ -416,36 +395,37 @@ class Diagram {
         pop();
     }
 
+    updatePosition(pos) {
+        this._angle = pos * this._maxAngle;
+    }
+
     get position() {
         return this._position;
     }
 }
 
-class ContainerPanel {
+class ContainerPanel extends guiObject {
     constructor(index, x, y, width, height, colorScheme) {
-        this._index = index;
-        this._x = x;
-        this._y = y;
-        this._width = width;
-        this._height = height;
+        super(x, y, width, height, () => {});
 
+        this._index = index;
         this._colorScheme = colorScheme;
 
-        this._foodAmount = guiManager.createCustomInput('', this._x + (this._width * 0.3), this._y + (this._height * 0.45), this._width * 0.2, this._colorScheme);
+        this._foodAmount = guiManager.createCustomInput('', this._genXCoord(0.3), this._genYCoord(0.45), this._genWidth(0.2), this._colorScheme);
 
-        this._diagram = new Diagram(this._x + (this._width * 0.5), this._y + (this._height * 0.58), this._width * 0.25, this._height * 0.1, 50);
+        this._diagram = new Diagram(this._genXCoord(0.5), this._genYCoord(0.58), this._genWidth(0.25), this._genHeight(0.1), 50);
 
-        this._positionSlider = guiManager.createCustomSlider(this._x + (this._width * 0.15), this._y + (this._height * 0.05), this._height * 0.9, s => {
+        this._positionSlider = guiManager.createCustomSlider(this._genXCoord(0.15), this._genYCoord(0.05), this._genHeight(0.9), s => {
             this._diagram.updatePosition(s.position);
             setContainerPanelPosition(index, s.position);
         }, this._colorScheme);
 
-        this._feedButton = guiManager.createCustomButton('feed', this._x + (this._width * 0.5), this._y + (this._height * 0.85), this._width * 0.4, this._height * 0.1, b => {
+        this._feedButton = guiManager.createCustomButton('feed', this._genXCoord(0.5), this._genYCoord(0.85), this._genWidth(0.4), this._genHeight(0.1), b => {
             console.log('button');
         }, this._colorScheme);
 
-        this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._x + (this._width * 0.3), this._y + (this._height * 0.25),
-            this._width * 0.4, (this._width * 0.25) * 0.5, s => {
+        this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._genXCoord(0.3), this._genYCoord(0.25),
+            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
                 console.log('switch');
             }, this._colorScheme);
     }
@@ -485,12 +465,9 @@ class ContainerPanel {
     }
 }
 
-class SettingsPanel {
+class SettingsPanel extends guiObject {
     constructor(x, y, width, height, colorScheme = colorSchemes.WHITE) {
-        this._x = x;
-        this._y = y;
-        this._width = width;
-        this._height = height;
+        super(x, y, width, height, () => {});
         this._colorScheme = colorScheme;
 
         this._feedingTime = guiManager.createCustomInput('', this._genXCoord(0.25), this._genYCoord(0.25),
@@ -520,26 +497,6 @@ class SettingsPanel {
             this._genWidth(0.35), this._genHeight(0.1), b => {
 
             }, this._colorScheme);
-    }
-
-    _genXCoord(perc) {
-        return this._x + (this._width * perc);
-    }
-
-    _genYCoord(perc) {
-        return this._y + (this._height * perc);
-    }
-
-    _genWidth(perc) {
-        return this._width * perc;
-    }
-
-    _genHeight(perc) {
-        return this._height * perc;
-    }
-
-    update() {
-
     }
 
     draw() {
@@ -593,10 +550,10 @@ function setup() {
     const spacing = width * ((1 - (objectWidthPerc * numObjects)) / (numObjects + 1)); // Remaining space divided by number of spaces
 
     for (let i = 0; i < numContainerPanels; ++i) {
-        containerPanels.push(new ContainerPanel(i, (i * objectWidth) + (spacing * (i + 1)), height * 0.15, objectWidth, height * 0.7, cs[i]));
+        guiManager.addGuiObject(new ContainerPanel(i, (i * objectWidth) + (spacing * (i + 1)), height * 0.15, objectWidth, height * 0.7, cs[i]));
     }
 
-    settingsPanel = new SettingsPanel((objectWidth * (numObjects - 1) + (spacing * numObjects)), height * 0.15, objectWidth, height * 0.7);
+    guiManager.addGuiObject(new SettingsPanel((objectWidth * (numObjects - 1) + (spacing * numObjects)), height * 0.15, objectWidth, height * 0.7));
 
     frameRate(120);
     textFont('Consolas');
@@ -605,16 +562,7 @@ function setup() {
 function draw() {
     background(50, 50, 68);
 
-    containerPanels.forEach(containerPanel => {
-        containerPanel.update();
-    });
-    settingsPanel.update();
     guiManager.update();
-
-    containerPanels.forEach(containerPanel => {
-        containerPanel.draw();
-    });
-    settingsPanel.draw();
     guiManager.draw();
 }
 
