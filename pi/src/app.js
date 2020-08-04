@@ -1,8 +1,8 @@
 let width, height;
-const numContainers = 3;
+const numContainerPanels = 3;
 
 let guiManager;
-let containers = [];
+let containerPanels = [];
 
 let primary_font;
 
@@ -10,15 +10,20 @@ const colors = {
     PRIMARY_RED: 'rgba(255, 26, 20, 0.8)',
     SECONDARY_RED: 'rgba(255, 26, 20, 0.2)',
     TERTIARY_RED: 'rgba(170, 0, 0, 0.2)',
-    PRIMARY_GREEN: 'rgba(255, 9, 255, 0.8)',
-    SECONDARY_GREEN: 'rgba(255, 9, 255, 0.2)',
-    TERTIARY_GREEN: 'rgba(200, 0, 190, 0.2)',
+    PRIMARY_PURPLE: 'rgba(255, 9, 255, 0.8)',
+    SECONDARY_PURPLE: 'rgba(255, 9, 255, 0.2)',
+    TERTIARY_PURPLE: 'rgba(200, 0, 190, 0.2)',
     PRIMARY_BLUE: 'rgba(0, 100, 255, 0.8)',
     SECONDARY_BLUE: 'rgba(0, 100, 255, 0.2)',
     TERTIARY_BLUE: 'rgba(0, 70, 200, 0.2)',
+    TERTIARY_PURPLE: 'rgba(200, 0, 190, 0.2)',
+    PRIMARY_WHITE: 'rgba(255, 255, 255, 0.8)',
+    SECONDARY_WHITE: 'rgba(255, 255, 255, 0.2)',
+    TERTIARY_WHITE: 'rgba(200, 200, 200, 0.2)',
     TEXT_COLOR: 'rgba(255, 255, 255, 1)',
     GOLD: 'rgba(224, 167, 8, 1)',
-    WHITE: 'rgba(255, 255, 255, 1)'
+    WHITE: 'rgba(255, 255, 255, 1)',
+    BLACK: 'RGBA(0, 0, 0, 1)',
 };
 
 const colorSchemes = {
@@ -29,10 +34,10 @@ const colorSchemes = {
         contrast: colors.WHITE,
         text: colors.WHITE,
     },
-    GREEN: {
-        primary: colors.PRIMARY_GREEN,
-        secondary: colors.SECONDARY_GREEN,
-        tertiary: colors.TERTIARY_GREEN,
+    PURPLE: {
+        primary: colors.PRIMARY_PURPLE,
+        secondary: colors.SECONDARY_PURPLE,
+        tertiary: colors.TERTIARY_PURPLE,
         contrast: colors.WHITE,
         text: colors.WHITE,
     },
@@ -43,14 +48,21 @@ const colorSchemes = {
         contrast: colors.WHITE,
         text: colors.WHITE,
     },
+    WHITE: {
+        primary: colors.PRIMARY_WHITE,
+        secondary: colors.SECONDARY_WHITE,
+        tertiary: colors.TERTIARY_WHITE,
+        contrast: colors.WHITE,
+        text: colors.WHITE,
+    }
 };
 
 class SliderHandle {
-    constructor(parent, x, y, w, h, color, inverted=false) {
+    constructor(parent, x, y, w, h, color, inverted = false) {
         this._parent = parent;
         this._inverted = inverted;
         this._initY = y;
-        this._x = x - (w / 2) + 2;  // Account for both width of slider and width of line which is always 4
+        this._x = x - (w / 2) + 2; // Account for both width of slider and width of line which is always 4
         this._y = y;
         this._w = w;
         this._h = h;
@@ -68,7 +80,7 @@ class SliderHandle {
         this._y = y - this._h / 2;
 
         let newPos = 0;
-        if (this._inverted) 
+        if (this._inverted)
             newPos = (y - this._initY) / this._parent.height;
         else
             newPos = 1 - (y - this._initY) / this._parent.height;
@@ -102,15 +114,14 @@ class SliderHandle {
 }
 
 class Slider {
-    constructor(index, x, y, height, callback, colorScheme, position,
-                handleWidth, handleHeight) {
-        this._index = index;
+    constructor(x, y, height, callback, colorScheme, position,
+        handleWidth, handleHeight) {
         this._x = x;
         this._y = y;
         this._height = height;
         this._callback = callback;
         this._position = position;
-        
+
         this._colorScheme = colorScheme;
 
         this._sliderHandle = new SliderHandle(this, x, y, handleWidth, handleHeight, colorScheme.contrast);
@@ -144,10 +155,6 @@ class Slider {
         pop();
     }
 
-    get index() {
-        return this._index;
-    }
-
     get height() {
         return this._height;
     }
@@ -159,8 +166,8 @@ class Slider {
 
 
 class Button {
-    constructor(customText, x, y, width, height, callback, 
-                colorScheme, textSize) {
+    constructor(customText, x, y, width, height, callback,
+        colorScheme, textSize) {
         this._x = x;
         this._y = y;
         this._width = width;
@@ -196,8 +203,7 @@ class Button {
 
         if (this.isHovered()) {
             fill(this._colorScheme.tertiary);
-        }
-        else {
+        } else {
             fill(this._colorScheme.secondary);
         }
 
@@ -218,7 +224,7 @@ class Switch {
         this._width = width;
         this._height = height;
         this._callback = callback;
-        
+
         this._colorScheme = colorScheme;
         this._textSize = textSize;
 
@@ -242,7 +248,7 @@ class Switch {
     }
 
     update() {
-        
+
     }
 
     draw() {
@@ -294,7 +300,7 @@ class GuiManager {
         this._buttons.forEach(b => {
             b.update();
         })
-    
+
         this._sliders.forEach(s => {
             s.update();
         });
@@ -308,7 +314,7 @@ class GuiManager {
         this._buttons.forEach(b => {
             b.draw();
         })
-    
+
         this._sliders.forEach(s => {
             s.draw();
         });
@@ -318,16 +324,16 @@ class GuiManager {
         })
     }
 
-    createCustomSlider(index, x, y, height, callback, colorScheme=colorSchemes.RED, position = 0.0,
-                        handleWidth = 50, handleHeight = 20) {
+    createCustomSlider(x, y, height, callback, colorScheme = colorSchemes.RED, position = 0.0,
+        handleWidth = 50, handleHeight = 20) {
 
-        let slider = new Slider(index, x, y, height, callback, colorScheme, position, handleWidth, handleHeight);
+        let slider = new Slider(x, y, height, callback, colorScheme, position, handleWidth, handleHeight);
         this._sliders.push(slider);
         return slider;
     }
 
-    createCustomButton(customText, x, y, width, height, callback, 
-        colorScheme=colorSchemes.RED, textSize=30) {
+    createCustomButton(customText, x, y, width, height, callback,
+        colorScheme = colorSchemes.RED, textSize = 30) {
 
         let button = new Button(customText, x, y, width, height, callback, colorScheme, textSize);
         this._buttons.push(button);
@@ -335,11 +341,18 @@ class GuiManager {
     }
 
     createCustomSwitch(option0, option1, x, y, width, height, callback,
-                        colorScheme=colorSchemes.RED, textSize=16) {
+        colorScheme = colorSchemes.RED, textSize = 16) {
 
         let s = new Switch(option0, option1, x, y, width, height, callback, colorScheme, textSize);
         this._switches.push(s);
         return s;
+    }
+
+    createCustomInput(x, y, size, colorScheme = colorSchemes.RED) {
+        let temp = createInput('');
+        temp.style(genInputStyleString(colorScheme));
+        temp.size(size);
+        temp.position(x, y);
     }
 
     onClick() {
@@ -366,7 +379,7 @@ class GuiManager {
 }
 
 class Diagram {
-    constructor(x, y, width, height, maxAngle=45) {
+    constructor(x, y, width, height, maxAngle = 45) {
         this._x = x;
         this._y = y;
         this._width = width;
@@ -377,7 +390,7 @@ class Diagram {
     }
 
     updatePosition(pos) {
-        this._angle = pos * 45; 
+        this._angle = pos * this._maxAngle;
     }
 
     update() {
@@ -386,15 +399,19 @@ class Diagram {
 
     draw() {
         push();
+        fill(colors.GOLD);
+        text(round(this._maxAngle - this._angle) + '°', this._x - this._width * 0.1, this._y + this._height * 0.7);
+        translate(this._x, this._y);
+        rotate(radians(45));
         stroke(colors.GOLD);
         strokeWeight(3);
         let temp = this._height * Math.tan(radians(90 - this._maxAngle));
-        line(this._x, this._y, this._x + (this._width - temp), this._y);
-        line(this._x, this._y, this._x, this._y + this._height);
-        line(this._x, this._y + this._height, this._x + this._width, this._y + this._height);
+        line(0, 0, this._width - temp, 0);
+        line(0, 0, 0, this._height);
+        line(0, this._height, this._width, this._height);
 
-        translate(this._x + this._width - temp, this._y);
-        rotate(radians(-(this._maxAngle - 5 - this._angle)));
+        translate(this._width - temp, 0);
+        rotate(radians(-(this._maxAngle - this._angle)));
         line(0, 0, temp, this._height);
         pop();
     }
@@ -404,7 +421,7 @@ class Diagram {
     }
 }
 
-class Container {
+class ContainerPanel {
     constructor(index, x, y, width, height, colorScheme) {
         this._index = index;
         this._x = x;
@@ -414,25 +431,23 @@ class Container {
 
         this._colorScheme = colorScheme;
 
-        this._foodAmount = createInput('');
-        this._foodAmount.style(genInputStyleString(this._colorScheme));
-        this._foodAmount.size(this._width * 0.2);
-        this._foodAmount.position(this._x + (this._width * 0.3), this._y + (this._height * 0.45));
+        this._foodAmount = guiManager.createCustomInput(this._x + (this._width * 0.3), this._y + (this._height * 0.45), this._width * 0.2, this._colorScheme);
 
-        this._diagram = new Diagram(this._x + (this._width * 0.35), this._y + (this._height * 0.63), this._width * 0.25, this._height * 0.1, 50);
-        
-        this._positionSlider = guiManager.createCustomSlider(index, this._x + (this._width * 0.15), this._y + (this._height * 0.05), this._height * 0.9, s => {
+        this._diagram = new Diagram(this._x + (this._width * 0.5), this._y + (this._height * 0.58), this._width * 0.25, this._height * 0.1, 50);
+
+        this._positionSlider = guiManager.createCustomSlider(this._x + (this._width * 0.15), this._y + (this._height * 0.05), this._height * 0.9, s => {
             this._diagram.updatePosition(s.position);
+            setContainerPanelPosition(index, s.position);
         }, this._colorScheme);
 
         this._feedButton = guiManager.createCustomButton('feed', this._x + (this._width * 0.5), this._y + (this._height * 0.85), this._width * 0.4, this._height * 0.1, b => {
             console.log('button');
         }, this._colorScheme);
 
-        this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._x + (this._width * 0.3), this._y + (this._height * 0.25), 
-                                        this._width * 0.4, (this._width * 0.25) * 0.5, s => {
-            console.log('switch');
-        }, this._colorScheme);
+        this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._x + (this._width * 0.3), this._y + (this._height * 0.25),
+            this._width * 0.4, (this._width * 0.25) * 0.5, s => {
+                console.log('switch');
+            }, this._colorScheme);
     }
 
     update() {
@@ -470,6 +485,68 @@ class Container {
     }
 }
 
+class SettingsPanel {
+    constructor(x, y, width, height, colorScheme = colorSchemes.WHITE) {
+        this._x = x;
+        this._y = y;
+        this._width = width;
+        this._height = height;
+        this._colorScheme = colorScheme;
+
+        this._alarmTime = guiManager.createCustomInput(this._genXCoord(0.23), this._genYCoord(0.25),
+            this._genWidth(0.3), this._colorScheme);
+
+        this._amPmSwitch = guiManager.createCustomSwitch('am', 'pm', this._genXCoord(0.58), this._genYCoord(0.25), this._genWidth(0.2), this._genHeight(0.059), s => {
+
+        }, this._colorScheme);
+
+        this._feedAllButton = guiManager.createCustomButton('feed all', this._genXCoord(0.5), this._genYCoord(0.85),
+            this._genWidth(0.35), this._genHeight(0.1), b => {
+
+            }, this._colorScheme);
+
+        this._applyButton = guiManager.createCustomButton('apply', this._genXCoord(0.1), this._genYCoord(0.85),
+            this._genWidth(0.35), this._genHeight(0.1), b => {
+
+            }, this._colorScheme);
+    }
+
+    _genXCoord(perc) {
+        return this._x + (this._width * perc);
+    }
+
+    _genYCoord(perc) {
+        return this._y + (this._height * perc);
+    }
+
+    _genWidth(perc) {
+        return this._width * perc;
+    }
+
+    _genHeight(perc) {
+        return this._height * perc;
+    }
+
+    update() {
+
+    }
+
+    draw() {
+        push();
+        stroke(this._colorScheme.primary);
+        fill(this._colorScheme.secondary);
+        rect(this._x, this._y, this._width, this._height, 15);
+
+        fill(this._colorScheme.text);
+        textAlign(CENTER, TOP);
+        textSize(50);
+        text('Settings', this._x + (this._width * 0.5), this._y + (this._height * 0.05));
+
+
+        pop();
+    }
+}
+
 function preload() {
     //primary_font = loadFont('gtr.tff');
 }
@@ -481,11 +558,17 @@ function setup() {
 
     guiManager = new GuiManager();
 
-    cs = [colorSchemes.RED, colorSchemes.GREEN, colorSchemes.BLUE];
+    let cs = [colorSchemes.RED, colorSchemes.PURPLE, colorSchemes.BLUE];
+    const numObjects = numContainerPanels + 1; // containerPanels + 1 settings panel
+    const objectWidthPerc = 0.23;
+    const objectWidth = width * objectWidthPerc; // 23% of width
+    const spacing = width * ((1 - (objectWidthPerc * numObjects)) / (numObjects + 1)); // Remaining space divided by number of spaces
 
-    for (let i = 0; i < numContainers; ++i) {
-        containers.push(new Container(i, i * (width * 0.25) + 35, height * 0.15, width * 0.23, height * 0.7, cs[i]));
+    for (let i = 0; i < numContainerPanels; ++i) {
+        containerPanels.push(new ContainerPanel(i, (i * objectWidth) + (spacing * (i + 1)), height * 0.15, objectWidth, height * 0.7, cs[i]));
     }
+
+    settingsPanel = new SettingsPanel((objectWidth * (numObjects - 1) + (spacing * numObjects)), height * 0.15, objectWidth, height * 0.7);
 
     frameRate(120);
     textFont('Consolas');
@@ -494,16 +577,16 @@ function setup() {
 function draw() {
     background(50, 50, 68);
 
-    containers.forEach(container => {
-        container.update();
+    containerPanels.forEach(containerPanel => {
+        containerPanel.update();
     });
-
+    settingsPanel.update();
     guiManager.update();
 
-    containers.forEach(container => {
-        container.draw();
+    containerPanels.forEach(containerPanel => {
+        containerPanel.draw();
     });
-
+    settingsPanel.draw();
     guiManager.draw();
 }
 
@@ -518,6 +601,7 @@ function genInputStyleString(scheme) {
     ret += 'border-width: 1px;';
     ret += 'border-style: solid;';
     ret += 'border-width: 1px;';
+    ret += 'outline: none;';
     ret += 'padding: 0px 10px;';
     ret += `color: ${scheme.text};`;
     ret += `background-color: ${scheme.secondary};`;
@@ -525,10 +609,7 @@ function genInputStyleString(scheme) {
     return ret;
 }
 
-function setContainerPosition(slider) {
-    index = slider.index;
-    position = slider.position;
-    
+function setContainerPanelPosition(index, position) {
     const req = `/set-container-position/?index=${index}&position=${position}`;
     fetch(req);
 }
