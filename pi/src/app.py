@@ -20,8 +20,18 @@ log.setLevel(logging.ERROR)
 
 @app.route('/')
 def home():
-    global board
+    global handler
     return render_template('home.html')
+
+@app.route('/get-settings/')
+def get_settings():
+    return handler.settings.json()
+
+@app.route('/update-settings/')
+def update_settings():
+    global handler
+    handler.settings.update(request.args)
+    return '200'
 
 @app.route('/feed/')
 def feed():

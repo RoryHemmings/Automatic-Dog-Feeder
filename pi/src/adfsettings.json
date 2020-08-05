@@ -1,20 +1,21 @@
 {
-    "times": [1000],
+    "feeding_time": "7:00",
+    "auto_feed": 0,
     "containers": [
         {
-            "name": "dog0",
-            "food_amount": 0,
-            "food_type": "small"
+            "name": "Dog0",
+            "food_amount": 3.5,
+            "food_type": 1
         },
         {
-            "name": "dog1",
-            "food_amount": 0,
-            "food_type": "small"
+            "name": "Dog1",
+            "food_amount": 8,
+            "food_type": 0
         },
         {
-            "name": "dog2",
-            "food_amount": 0,
-            "food_type": "small"
+            "name": "Dog2",
+            "food_amount": 12,
+            "food_type": 1
         }
     ]
 }

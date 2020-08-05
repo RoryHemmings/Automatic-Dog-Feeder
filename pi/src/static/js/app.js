@@ -82,6 +82,8 @@ class guiObject {
         return this._height * perc;
     }
 
+    updateSettings(settings) {}
+
     isHovered() {
         if (mouseX >= this._x && mouseX <= (this._x + this._width) && mouseY >= this._y && mouseY <= (this._y + this._height)) {
             return true;
@@ -95,11 +97,11 @@ class guiObject {
         }
     }
 
-    onPress() { }
-    onRelease() { }
+    onPress() {}
+    onRelease() {}
 
-    update() { }
-    draw() { }
+    update() {}
+    draw() {}
 }
 
 class SliderHandle {
@@ -169,7 +171,7 @@ class Slider extends guiObject {
         this._sliderHandle = new SliderHandle(this, x, y, handleWidth, handleHeight, colorScheme.contrast);
     }
 
-    onClick() { }
+    onClick() {}
 
     onPress() {
         this._sliderHandle.isClicked();
@@ -185,6 +187,7 @@ class Slider extends guiObject {
 
     updatePosition(pos) {
         this._position = pos;
+        //setContainerPanelPosition(0, this._position);
         this._callback(this);
     }
 
@@ -302,6 +305,12 @@ class GuiManager {
         this._guiObjects = [];
     }
 
+    updateSettings(settings) {
+        this._guiObjects.forEach(obj => {
+            obj.updateSettings(settings);
+        })
+    }
+
     update() {
         this._guiObjects.forEach(obj => {
             obj.update();
@@ -343,6 +352,7 @@ class GuiManager {
         temp.style(genInputStyleString(colorScheme));
         temp.size(size);
         temp.position(x, y);
+        return temp;
     }
 
     onClick() {
@@ -410,6 +420,7 @@ class ContainerPanel extends guiObject {
 
         this._index = index;
         this._colorScheme = colorScheme;
+        this._dogName = '';
 
         this._foodAmount = guiManager.createCustomInput('', this._genXCoord(0.3), this._genYCoord(0.45), this._genWidth(0.2), this._colorScheme);
 
@@ -428,6 +439,12 @@ class ContainerPanel extends guiObject {
             this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
                 console.log('switch');
             }, this._colorScheme);
+    }
+
+    updateSettings(settings) {
+        this._foodSwitch.currentOption = settings.containers[this._index].food_type;
+        this._foodAmount.value(settings.containers[this._index].food_amount);
+        this._dogName = settings.containers[this._index].name;
     }
 
     update() {
@@ -450,7 +467,7 @@ class ContainerPanel extends guiObject {
         //textFont(primary_font);
         fill(this._colorScheme.text);
         textSize(52);
-        text("Dog0", this._x + (this._width * 0.8), this._y + (this._height * 0.05));
+        text(this._dogName, this._x + (this._width * 0.8), this._y + (this._height * 0.05));
 
         textAlign(LEFT, TOP);
         textSize(18);
@@ -475,17 +492,18 @@ class SettingsPanel extends guiObject {
 
         this._amPmSwitch = guiManager.createCustomSwitch('am', 'pm', this._genXCoord(0.57), this._genYCoord(0.25),
             this._genWidth(0.18), this._genHeight(0.059), s => {
-            
-        }, this._colorScheme);
+
+            }, this._colorScheme);
 
         this._autoFeedSwitch = guiManager.createCustomSwitch('on', 'off', this._genXCoord(0.3), this._genYCoord(0.45),
             this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
-            
-        }, this._colorScheme);
 
+            }, this._colorScheme);
+
+        this._dogNames = [];
         for (let i = 0; i < numContainerPanels; i++) {
-            this._alarmTime = guiManager.createCustomInput('dog0', this._genXCoord((i + 1) * 0.25) - (this._width * 0.123), this._genYCoord(0.67),
-                this._genWidth(0.2), this._colorScheme);
+            this._dogNames.push(guiManager.createCustomInput('dog0', this._genXCoord((i + 1) * 0.25) - (this._width * 0.123), this._genYCoord(0.67),
+                this._genWidth(0.2), this._colorScheme));
         }
 
         this._feedAllButton = guiManager.createCustomButton('feed all', this._genXCoord(0.5), this._genYCoord(0.85),
@@ -499,9 +517,17 @@ class SettingsPanel extends guiObject {
             }, this._colorScheme);
     }
 
+    updateSettings(settings) {
+        this._feedingTime.value(settings.feeding_time);
+        this._autoFeedSwitch.currentOption = settings.auto_feed;
+        for (let i = 0; i < this._dogNames.length; i++) {
+            this._dogNames[i].value(settings.containers[i].name);
+        }
+    }
+
     draw() {
         push();
-        
+
         stroke(this._colorScheme.primary);
         strokeWeight(4);
         fill(this._colorScheme.secondary);
@@ -557,6 +583,7 @@ function setup() {
 
     frameRate(120);
     textFont('Consolas');
+    getSettings();
 }
 
 function draw() {
@@ -600,4 +627,13 @@ function mousePressed() {
 
 function mouseReleased() {
     guiManager.onRelease();
+}
+
+function getSettings() {
+    fetch('/get-settings')
+        .then(res => res.json())
+        .then(settings => {
+            console.log(settings);
+            guiManager.updateSettings(settings);
+        });
 }
