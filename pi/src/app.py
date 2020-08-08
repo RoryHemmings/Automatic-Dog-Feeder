@@ -5,7 +5,7 @@ parser.add_argument('-n', '--hostname', metavar='<hostname>', required=True, hel
 
 args = vars(parser.parse_args()) # create dictionary of arguments
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 app = Flask(__name__)
 
 from multiprocessing import Process
@@ -27,11 +27,11 @@ def home():
 def get_settings():
     return handler.settings.json()
 
-@app.route('/update-settings/')
+@app.route('/update-settings/', methods=['POST'])
 def update_settings():
     global handler
-    handler.settings.update(request.args)
-    return '200'
+    handler.settings.update(request.json)
+    return Response(status='200')
 
 @app.route('/feed/')
 def feed():

@@ -1,21 +1,17 @@
 {
+    "containers": [{
+        "food_amount": "3.5",
+        "food_type": 1,
+        "name": "Taggie"
+    }, {
+        "food_amount": "8",
+        "food_type": 0,
+        "name": "Pip"
+    }, {
+        "food_amount": "12",
+        "food_type": 1,
+        "name": "Blu"
+    }],
     "feeding_time": "7:00",
-    "auto_feed": 0,
-    "containers": [
-        {
-            "name": "Dog0",
-            "food_amount": 3.5,
-            "food_type": 1
-        },
-        {
-            "name": "Dog1",
-            "food_amount": 8,
-            "food_type": 0
-        },
-        {
-            "name": "Dog2",
-            "food_amount": 12,
-            "food_type": 1
-        }
-    ]
+    "auto_feed": 0
 }

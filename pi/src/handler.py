@@ -19,7 +19,9 @@ class Settings:
         return self._json
     
     def update(self, settings):
-        pass
+        self._json = settings
+        with open(self._path, 'w') as f:
+            json.dump(settings, f)
 
 class Handler(threading.Thread):
     def __init__(self):

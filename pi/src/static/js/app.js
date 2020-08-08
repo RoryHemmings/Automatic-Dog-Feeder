@@ -82,8 +82,6 @@ class guiObject {
         return this._height * perc;
     }
 
-    updateSettings(settings) {}
-
     isHovered() {
         if (mouseX >= this._x && mouseX <= (this._x + this._width) && mouseY >= this._y && mouseY <= (this._y + this._height)) {
             return true;
@@ -97,12 +95,26 @@ class guiObject {
         }
     }
 
-    onPress() {}
-    onRelease() {}
+    // Both functions pass settings json object through each guiObject
+    applySettings(settings) { }     // Sends settings to back end to update config files
+    updateSettings(settings) { }    // Modifies settings on front end
 
-    update() {}
-    draw() {}
+    onPress() { }
+    onRelease() { }
+
+    update() { }
+    draw() { }
 }
+
+// class guiGroup extends guiObject {
+//     constructor(x, y, width, height) {
+//         super(x, y, width, height, () => {});
+//     }
+
+//     // Both functions pass settings json object through each guiObject
+//     applySettings(settings) { }     // Sends settings to back end to update config files
+//     updateSettings(settings) { }    // Modifies settings on front end
+// }
 
 class SliderHandle {
     constructor(parent, x, y, w, h, color, inverted = false) {
@@ -211,7 +223,6 @@ class Slider extends guiObject {
     }
 }
 
-
 class Button extends guiObject {
     constructor(customText, x, y, width, height, callback,
         colorScheme, textSize) {
@@ -300,9 +311,209 @@ class Switch extends guiObject {
     }
 }
 
+class Diagram extends guiObject {
+    constructor(x, y, width, height, maxAngle = 45) {
+        super(x, y, width, height, () => {});
+
+        this._maxAngle = maxAngle;
+        this._angle = 0;
+    }
+
+    draw() {
+        push();
+        fill(colors.GOLD);
+        text(round(this._maxAngle - this._angle) + '°', this._genXCoord(0.1), this._genYCoord(0.7));
+        translate(this._x, this._y);
+        rotate(radians(45));
+        stroke(colors.GOLD);
+        strokeWeight(3);
+        let temp = this._height * Math.tan(radians(90 - this._maxAngle));
+        line(0, 0, this._width - temp, 0);
+        line(0, 0, 0, this._height);
+        line(0, this._height, this._width, this._height);
+
+        translate(this._width - temp, 0);
+        rotate(radians(-(this._maxAngle - this._angle)));
+        line(0, 0, temp, this._height);
+        pop();
+    }
+
+    updatePosition(pos) {
+        this._angle = pos * this._maxAngle;
+    }
+
+    get position() {
+        return this._position;
+    }
+}
+
+class ContainerPanel extends guiObject {
+    constructor(index, x, y, width, height, colorScheme) {
+        super(x, y, width, height, () => {});
+
+        this._index = index;
+        this._colorScheme = colorScheme;
+        this._dogName = '';
+
+        this._foodAmount = guiManager.createCustomInput('', this._genXCoord(0.3), this._genYCoord(0.45), this._genWidth(0.2), this._colorScheme);
+
+        this._diagram = new Diagram(this._genXCoord(0.5), this._genYCoord(0.58), this._genWidth(0.25), this._genHeight(0.1), 50);
+
+        this._positionSlider = guiManager.createCustomSlider(this._genXCoord(0.15), this._genYCoord(0.05), this._genHeight(0.9), s => {
+            this._diagram.updatePosition(s.position);
+            setContainerPanelPosition(index, s.position);
+        }, this._colorScheme);
+
+        this._feedButton = guiManager.createCustomButton('feed', this._genXCoord(0.5), this._genYCoord(0.85), this._genWidth(0.4), this._genHeight(0.1), b => {
+            console.log('button');
+        }, this._colorScheme);
+
+        this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._genXCoord(0.3), this._genYCoord(0.25),
+            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
+                console.log('switch');
+            }, this._colorScheme);
+    }
+
+    applySettings(settings) {
+        settings.containers[this._index].food_amount = this._foodAmount.value();
+        settings.containers[this._index].food_type = this._foodSwitch.currentOption;
+    }
+
+    updateSettings(settings) {
+        this._foodSwitch.currentOption = settings.containers[this._index].food_type;
+        this._foodAmount.value(settings.containers[this._index].food_amount);
+        this._dogName = settings.containers[this._index].name;
+    }
+
+    update() {
+        this._diagram.update();
+    }
+
+    draw() {
+        // Rectangle
+        push();
+        fill(this._colorScheme.secondary);
+        strokeWeight(4);
+        stroke(this._colorScheme.primary);
+
+        rect(this._x, this._y, this._width, this._height, 15);
+        pop();
+
+        //Text
+        push();
+        textAlign(RIGHT, TOP);
+        //textFont(primary_font);
+        fill(this._colorScheme.text);
+        textSize(52);
+        text(this._dogName, this._x + (this._width * 0.8), this._y + (this._height * 0.05));
+
+        textAlign(LEFT, TOP);
+        textSize(18);
+        text("Food Type: ", this._x + (this._width * 0.3), this._y + (this._height * 0.2));
+
+        textSize(18);
+        text('Food Amount: ', this._x + (this._width * 0.3), this._y + (this._height * 0.4));
+        text('grams', this._x + (this._width * 0.575), this._y + (this._height * 0.47));
+        pop();
+
+        this._diagram.draw();
+    }
+}
+
+class SettingsPanel extends guiObject {
+    constructor(x, y, width, height, colorScheme = colorSchemes.WHITE) {
+        super(x, y, width, height, () => {});
+        this._colorScheme = colorScheme;
+
+        this._feedingTime = guiManager.createCustomInput('', this._genXCoord(0.25), this._genYCoord(0.25),
+            this._genWidth(0.3), this._colorScheme);
+
+        this._amPmSwitch = guiManager.createCustomSwitch('am', 'pm', this._genXCoord(0.57), this._genYCoord(0.25),
+            this._genWidth(0.18), this._genHeight(0.059), s => {
+
+            }, this._colorScheme);
+
+        this._autoFeedSwitch = guiManager.createCustomSwitch('on', 'off', this._genXCoord(0.3), this._genYCoord(0.45),
+            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
+
+            }, this._colorScheme);
+
+        this._dogNames = [];
+        for (let i = 0; i < numContainerPanels; i++) {
+            this._dogNames.push(guiManager.createCustomInput('dog0', this._genXCoord((i + 1) * 0.25) - (this._width * 0.123), this._genYCoord(0.67),
+                this._genWidth(0.2), this._colorScheme));
+        }
+
+        this._feedAllButton = guiManager.createCustomButton('feed all', this._genXCoord(0.5), this._genYCoord(0.85),
+            this._genWidth(0.35), this._genHeight(0.1), b => {
+
+            }, this._colorScheme);
+
+        this._applyButton = guiManager.createCustomButton('apply', this._genXCoord(0.1), this._genYCoord(0.85),
+            this._genWidth(0.35), this._genHeight(0.1), b => {
+                applySettings();
+            }, this._colorScheme);
+    }
+
+    applySettings(settings) {
+        settings.feeding_time = this._feedingTime.value();
+        settings.auto_feed = this._autoFeedSwitch.currentOption;
+
+        for (let i = 0; i < this._dogNames.length; i++) {
+            settings.containers[i].name = this._dogNames[i].value();
+        }
+    }
+
+    updateSettings(settings) {
+        this._feedingTime.value(settings.feeding_time);
+        this._autoFeedSwitch.currentOption = settings.auto_feed;
+        for (let i = 0; i < this._dogNames.length; i++) {
+            this._dogNames[i].value(settings.containers[i].name);
+        }
+    }
+
+    draw() {
+        push();
+
+        stroke(this._colorScheme.primary);
+        strokeWeight(4);
+        fill(this._colorScheme.secondary);
+        rect(this._x, this._y, this._width, this._height, 15);
+
+        noStroke();
+        fill(this._colorScheme.text);
+        textAlign(CENTER, TOP);
+        textSize(50);
+        text('Settings', this._genXCoord(0.5), this._genYCoord(0.05));
+
+        fill(this._colorScheme.text);
+        textAlign(LEFT, TOP);
+        textSize(18);
+        text('Feeding Time: ', this._genXCoord(0.25), this._genYCoord(0.2));
+
+        fill(this._colorScheme.text);
+        textAlign(LEFT, TOP);
+        textSize(18);
+        text('Auto-Feed: ', this._genXCoord(0.3), this._genYCoord(0.4));
+
+        fill(this._colorScheme.text);
+        textAlign(CENTER, TOP);
+        textSize(18);
+        text('Dog Names: ', this._genXCoord(0.48), this._genYCoord(0.6));
+
+        pop();
+    }
+}
+
 class GuiManager {
     constructor() {
         this._guiObjects = [];
+    }
+
+    applySettings(settings) {
+        this._guiObjects.forEach(obj => {
+            obj.applySettings(settings);
+        });
     }
 
     updateSettings(settings) {
@@ -378,186 +589,6 @@ class GuiManager {
     }
 }
 
-class Diagram extends guiObject {
-    constructor(x, y, width, height, maxAngle = 45) {
-        super(x, y, width, height, () => {});
-
-        this._maxAngle = maxAngle;
-        this._angle = 0;
-    }
-
-    draw() {
-        push();
-        fill(colors.GOLD);
-        text(round(this._maxAngle - this._angle) + '°', this._genXCoord(0.1), this._genYCoord(0.7));
-        translate(this._x, this._y);
-        rotate(radians(45));
-        stroke(colors.GOLD);
-        strokeWeight(3);
-        let temp = this._height * Math.tan(radians(90 - this._maxAngle));
-        line(0, 0, this._width - temp, 0);
-        line(0, 0, 0, this._height);
-        line(0, this._height, this._width, this._height);
-
-        translate(this._width - temp, 0);
-        rotate(radians(-(this._maxAngle - this._angle)));
-        line(0, 0, temp, this._height);
-        pop();
-    }
-
-    updatePosition(pos) {
-        this._angle = pos * this._maxAngle;
-    }
-
-    get position() {
-        return this._position;
-    }
-}
-
-class ContainerPanel extends guiObject {
-    constructor(index, x, y, width, height, colorScheme) {
-        super(x, y, width, height, () => {});
-
-        this._index = index;
-        this._colorScheme = colorScheme;
-        this._dogName = '';
-
-        this._foodAmount = guiManager.createCustomInput('', this._genXCoord(0.3), this._genYCoord(0.45), this._genWidth(0.2), this._colorScheme);
-
-        this._diagram = new Diagram(this._genXCoord(0.5), this._genYCoord(0.58), this._genWidth(0.25), this._genHeight(0.1), 50);
-
-        this._positionSlider = guiManager.createCustomSlider(this._genXCoord(0.15), this._genYCoord(0.05), this._genHeight(0.9), s => {
-            this._diagram.updatePosition(s.position);
-            setContainerPanelPosition(index, s.position);
-        }, this._colorScheme);
-
-        this._feedButton = guiManager.createCustomButton('feed', this._genXCoord(0.5), this._genYCoord(0.85), this._genWidth(0.4), this._genHeight(0.1), b => {
-            console.log('button');
-        }, this._colorScheme);
-
-        this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._genXCoord(0.3), this._genYCoord(0.25),
-            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
-                console.log('switch');
-            }, this._colorScheme);
-    }
-
-    updateSettings(settings) {
-        this._foodSwitch.currentOption = settings.containers[this._index].food_type;
-        this._foodAmount.value(settings.containers[this._index].food_amount);
-        this._dogName = settings.containers[this._index].name;
-    }
-
-    update() {
-        this._diagram.update();
-    }
-
-    draw() {
-        // Rectangle
-        push();
-        fill(this._colorScheme.secondary);
-        strokeWeight(4);
-        stroke(this._colorScheme.primary);
-
-        rect(this._x, this._y, this._width, this._height, 15);
-        pop();
-
-        //Text
-        push();
-        textAlign(RIGHT, TOP);
-        //textFont(primary_font);
-        fill(this._colorScheme.text);
-        textSize(52);
-        text(this._dogName, this._x + (this._width * 0.8), this._y + (this._height * 0.05));
-
-        textAlign(LEFT, TOP);
-        textSize(18);
-        text("Food Type: ", this._x + (this._width * 0.3), this._y + (this._height * 0.2));
-
-        textSize(18);
-        text('Food Amount: ', this._x + (this._width * 0.3), this._y + (this._height * 0.4));
-        text('grams', this._x + (this._width * 0.575), this._y + (this._height * 0.47));
-        pop();
-
-        this._diagram.draw();
-    }
-}
-
-class SettingsPanel extends guiObject {
-    constructor(x, y, width, height, colorScheme = colorSchemes.WHITE) {
-        super(x, y, width, height, () => {});
-        this._colorScheme = colorScheme;
-
-        this._feedingTime = guiManager.createCustomInput('', this._genXCoord(0.25), this._genYCoord(0.25),
-            this._genWidth(0.3), this._colorScheme);
-
-        this._amPmSwitch = guiManager.createCustomSwitch('am', 'pm', this._genXCoord(0.57), this._genYCoord(0.25),
-            this._genWidth(0.18), this._genHeight(0.059), s => {
-
-            }, this._colorScheme);
-
-        this._autoFeedSwitch = guiManager.createCustomSwitch('on', 'off', this._genXCoord(0.3), this._genYCoord(0.45),
-            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
-
-            }, this._colorScheme);
-
-        this._dogNames = [];
-        for (let i = 0; i < numContainerPanels; i++) {
-            this._dogNames.push(guiManager.createCustomInput('dog0', this._genXCoord((i + 1) * 0.25) - (this._width * 0.123), this._genYCoord(0.67),
-                this._genWidth(0.2), this._colorScheme));
-        }
-
-        this._feedAllButton = guiManager.createCustomButton('feed all', this._genXCoord(0.5), this._genYCoord(0.85),
-            this._genWidth(0.35), this._genHeight(0.1), b => {
-
-            }, this._colorScheme);
-
-        this._applyButton = guiManager.createCustomButton('apply', this._genXCoord(0.1), this._genYCoord(0.85),
-            this._genWidth(0.35), this._genHeight(0.1), b => {
-
-            }, this._colorScheme);
-    }
-
-    updateSettings(settings) {
-        this._feedingTime.value(settings.feeding_time);
-        this._autoFeedSwitch.currentOption = settings.auto_feed;
-        for (let i = 0; i < this._dogNames.length; i++) {
-            this._dogNames[i].value(settings.containers[i].name);
-        }
-    }
-
-    draw() {
-        push();
-
-        stroke(this._colorScheme.primary);
-        strokeWeight(4);
-        fill(this._colorScheme.secondary);
-        rect(this._x, this._y, this._width, this._height, 15);
-
-        noStroke();
-        fill(this._colorScheme.text);
-        textAlign(CENTER, TOP);
-        textSize(50);
-        text('Settings', this._genXCoord(0.5), this._genYCoord(0.05));
-
-        fill(this._colorScheme.text);
-        textAlign(LEFT, TOP);
-        textSize(18);
-        text('Feeding Time: ', this._genXCoord(0.25), this._genYCoord(0.2));
-
-        fill(this._colorScheme.text);
-        textAlign(LEFT, TOP);
-        textSize(18);
-        text('Auto-Feed: ', this._genXCoord(0.3), this._genYCoord(0.4));
-
-        fill(this._colorScheme.text);
-        textAlign(CENTER, TOP);
-        textSize(18);
-        text('Dog Names: ', this._genXCoord(0.48), this._genYCoord(0.6));
-
-        pop();
-    }
-}
-
 function preload() {
     //primary_font = loadFont('gtr.tff');
 }
@@ -629,11 +660,26 @@ function mouseReleased() {
     guiManager.onRelease();
 }
 
+function applySettings() {
+    let settings = {containers: [{}, {}, {}]};
+    guiManager.applySettings(settings);
+    fetch('/update-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings)
+    }).then(res => {
+        if (res.status == 200) {
+            getSettings();
+        }
+    })
+}
+
 function getSettings() {
     fetch('/get-settings')
         .then(res => res.json())
         .then(settings => {
-            console.log(settings);
             guiManager.updateSettings(settings);
         });
 }
