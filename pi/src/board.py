@@ -39,8 +39,8 @@ class Board(threading.Thread):
     def __init__(self, port, baud_rate, timeout, num_motors=1):
         threading.Thread.__init__(self)
         
-        self.ser = serial.Serial(port, baud_rate, timeout=timeout)
-        self.ser.flush()
+        # self.ser = serial.Serial(port, baud_rate, timeout=timeout)
+        # self.ser.flush()
     
         self._containers = []
         for i in range(num_motors):
@@ -52,7 +52,7 @@ class Board(threading.Thread):
         self._command_queue = []
         
     def _gen_ati_pair(self, food_amount, food_type, index):
-        time_open = 100     # milliseconds
+        time_open = 100
         a = {
             'angle': MAX_ANGLE,
             'tick_offset': self._ticks,     # Should be opened off immediately
@@ -76,7 +76,10 @@ class Board(threading.Thread):
         while i < len(self._command_queue):
             if ati['tick_offset'] < self._command_queue[i]['tick_offset']:
                 self._command_queue.insert(i, ati)
-                break
+                return
+            i += 1
+            
+        self._command_queue.append(ati)
     
     # for high level control
     def feed(self, settings, index):
@@ -97,16 +100,18 @@ class Board(threading.Thread):
     # for extra-low level control
     def write_to_serial(self, message):
         message = str(message).encode('utf-8')
-        self.ser.write(message)
+        # self.ser.write(message)
+        print(message)
 
     # for extra-low level reading
     def read_from_serial(self):
-        line = ''
-        if self.ser.in_waiting > 0:
-            line = read_line(self.ser)
+        # line = ''
+        # if self.ser.in_waiting > 0:
+            # line = read_line(self.ser)
         
-        if len(line) > 0:
-            print(line)
+        # if len(line) > 0:
+        #     print(line)
+        pass
 
     def run(self):
         while self._running:
@@ -118,17 +123,19 @@ class Board(threading.Thread):
                 return
             
             # output managment
-            head = self._command_queue[0]
-            
-            self._ticks += 1
-            if self._ticks >= head['tick_offset']:
-                self.set_container_position(head['index'], head['angle'])
-                self._reset_queue()
+            if (len(self._command_queue) > 0):
+                head = self._command_queue[0]
+                
+                self._ticks += 1
+                if self._ticks >= head['tick_offset']:
+                    self.set_container_position(head['index'], head['angle'])
+                    self._command_queue.pop(0)   # remove first element
+                    self._reset_queue()
                 
             # if the tick number gets past 10 seconds, it will auto reset to keep the tick number reasonably small
             if (self._ticks >= 10000):
                 self._reset_queue()
             
-            elapsed = time.time() - now  # how long was it running?
-            time.sleep(TICK_RATE - elapsed)
+            elapsed = time.time() - now
+            time.sleep(TICK_RATE - (elapsed if elapsed <= TICK_RATE else 0))
             

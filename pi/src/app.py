@@ -36,7 +36,8 @@ def update_settings():
 @app.route('/feed/<index>')
 def feed(index):
     global handler
-    if int(index) >= 0:
+    index = int(index)
+    if index >= 0:
         handler.feed(index)
     else:
         handler.feed_all()
