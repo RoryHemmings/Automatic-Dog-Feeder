@@ -1,15 +1,15 @@
 {
     "containers": [{
-        "food_amount": "3.5",
+        "food_amount": "15",
         "food_type": 1,
         "name": "Taggie"
     }, {
         "food_amount": "8",
-        "food_type": 0,
+        "food_type": 1,
         "name": "Pip"
     }, {
         "food_amount": "12",
-        "food_type": 1,
+        "food_type": 0,
         "name": "Blu"
     }],
     "feeding_time": "7:00",

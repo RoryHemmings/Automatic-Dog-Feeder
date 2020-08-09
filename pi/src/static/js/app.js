@@ -365,7 +365,7 @@ class ContainerPanel extends guiObject {
         }, this._colorScheme);
 
         this._feedButton = guiManager.createCustomButton('feed', this._genXCoord(0.5), this._genYCoord(0.85), this._genWidth(0.4), this._genHeight(0.1), b => {
-            console.log('button');
+            feed(this._index);
         }, this._colorScheme);
 
         this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._genXCoord(0.3), this._genYCoord(0.25),
@@ -446,7 +446,7 @@ class SettingsPanel extends guiObject {
 
         this._feedAllButton = guiManager.createCustomButton('feed all', this._genXCoord(0.5), this._genYCoord(0.85),
             this._genWidth(0.35), this._genHeight(0.1), b => {
-
+                feed(-1);
             }, this._colorScheme);
 
         this._applyButton = guiManager.createCustomButton('apply', this._genXCoord(0.1), this._genYCoord(0.85),
@@ -624,10 +624,6 @@ function draw() {
     guiManager.draw();
 }
 
-function feed() {
-    fetch('/feed/');
-}
-
 function genInputStyleString(scheme) {
     ret = '';
     ret += 'border-radius: 12px;';
@@ -658,6 +654,14 @@ function mousePressed() {
 
 function mouseReleased() {
     guiManager.onRelease();
+}
+
+function feed(index) {
+    fetch(`/feed/${index}`)
+    // .then(res => res.json())
+    // .then(data => {
+    //     console.log(data);
+    // });
 }
 
 function applySettings() {

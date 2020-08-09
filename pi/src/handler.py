@@ -34,8 +34,11 @@ class Handler(threading.Thread):
         
         self._running = True
 
-    def feed(self):
-        print('feed')
+    def feed(self, index):
+        return self._board.feed(self.settings.containers[index], index)
+        
+    def feed_all(self):
+        return self._board.feed_all(self.settings.containers)
     
     def set_container_position(self, index, pos):
         self._board.set_container_position(index, pos)

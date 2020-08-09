@@ -33,11 +33,15 @@ def update_settings():
     handler.settings.update(request.json)
     return Response(status='200')
 
-@app.route('/feed/')
-def feed():
+@app.route('/feed/<index>')
+def feed(index):
     global handler
-    handler.feed()
-    return '200'
+    if int(index) >= 0:
+        handler.feed(index)
+    else:
+        handler.feed_all()
+        
+    return Response(status='200')
 
 @app.route('/set-container-position/')
 def set_container_position():
