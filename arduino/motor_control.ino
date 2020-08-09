@@ -15,7 +15,7 @@
 #define INPUT_SIZE 5
 
 const uint8_t numMotors = 3;
-const uint8_t motorPins[numMotors] = { 11, 10, 9 };
+const uint8_t motorPins[numMotors] = { 11, 9, 5 };
 // const uint8_t motorPins[numMotors] = { 11, 10, 9, 6, 5, 3 };
 
 Servo motors[numMotors];
@@ -48,7 +48,12 @@ void parseCommand(char* command) {
 }
 
 void setMotor(uint8_t index, uint8_t angle) {
+    // Serial.print("IA: ");
+    // Serial.print(index);
+    // Serial.print(" ");
+    // Serial.println(angle);
     motors[index].write(angle);
+    delay(5);
 }
 
 void setup()

@@ -29,7 +29,7 @@ class Handler(threading.Thread):
         
         self.settings = Settings('adfsettings.json')
         
-        self._board = board.Board('COM7', 9600, 1, 6)
+        self._board = board.Board('COM7', 9600, timeout=1, num_motors=3)
         self._board.start()
         
         self._running = True

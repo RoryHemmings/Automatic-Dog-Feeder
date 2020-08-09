@@ -2,9 +2,9 @@
 
     queue pattern: 
         [
-            {angle, index, tick_offset},    Order from lowest tick_offset to highest
-            {angle, index, tick_offset},
-            {angle, index, tick_offset},
+            {index, tick_offset},    Order from lowest tick_offset to highest
+            {index, tick_offset},
+            {index, tick_offset},
             ...
         ]
     
@@ -26,9 +26,6 @@ from colorama import Style
 TPS = 100
 TICK_RATE = 1 / TPS
 
-MIN_ANGLE = 0
-MAX_ANGLE = 45
-
 def read_line(ser):
     try:
         return ser.readline().decode('utf-8').rstrip()
@@ -39,8 +36,8 @@ class Board(threading.Thread):
     def __init__(self, port, baud_rate, timeout, num_motors=1):
         threading.Thread.__init__(self)
         
-        # self.ser = serial.Serial(port, baud_rate, timeout=timeout)
-        # self.ser.flush()
+        self.ser = serial.Serial(port, baud_rate, timeout=timeout)
+        self.ser.flush()
     
         self._containers = []
         for i in range(num_motors):
@@ -51,40 +48,40 @@ class Board(threading.Thread):
         self._ticks = 0
         self._command_queue = []
         
-    def _gen_ati_pair(self, food_amount, food_type, index):
-        time_open = 100
+    def _gen_ti_pair(self, food_amount, food_type, index):
+        time_open = 200
         a = {
-            'angle': MAX_ANGLE,
+            'open': True,
             'tick_offset': self._ticks,     # Should be opened off immediately
             'index': index
         }
         b = {
-            'angle': MIN_ANGLE,
+            'open': False,
             'tick_offset': self._ticks + time_open,     # Should be closed in time_open milliseconds
             'index': index
         }
         return (a, b)
     
     def _reset_queue(self):
-        for ati in self._command_queue:
-            ati['tick_offset'] -= self._ticks
+        for ti in self._command_queue:
+            ti['tick_offset'] -= self._ticks
             
         self._ticks = 0
         
-    def _add_to_command_queue(self, ati):
+    def _add_to_command_queue(self, ti):
         i = 0
         while i < len(self._command_queue):
-            if ati['tick_offset'] < self._command_queue[i]['tick_offset']:
-                self._command_queue.insert(i, ati)
+            if ti['tick_offset'] < self._command_queue[i]['tick_offset']:
+                self._command_queue.insert(i, ti)
                 return
             i += 1
             
-        self._command_queue.append(ati)
+        self._command_queue.append(ti)
     
     # for high level control
     def feed(self, settings, index):
         # add to queue angle-time-index-pair based off settings
-        commands = self._gen_ati_pair(settings['food_amount'], settings['food_type'], index)
+        commands = self._gen_ti_pair(settings['food_amount'], settings['food_type'], index)
         self._add_to_command_queue(commands[0])
         self._add_to_command_queue(commands[1])
     
@@ -100,18 +97,16 @@ class Board(threading.Thread):
     # for extra-low level control
     def write_to_serial(self, message):
         message = str(message).encode('utf-8')
-        # self.ser.write(message)
-        print(message)
+        self.ser.write(message)
 
     # for extra-low level reading
     def read_from_serial(self):
-        # line = ''
-        # if self.ser.in_waiting > 0:
-            # line = read_line(self.ser)
+        line = ''
+        if self.ser.in_waiting > 0:
+            line = read_line(self.ser)
         
-        # if len(line) > 0:
-        #     print(line)
-        pass
+        if len(line) > 0:
+            print(line)
 
     def run(self):
         while self._running:
@@ -120,7 +115,7 @@ class Board(threading.Thread):
             # input management
             self.read_from_serial()
             if keyboard.is_pressed('f'):
-                return
+                self._running = False
             
             # output managment
             if (len(self._command_queue) > 0):
@@ -128,7 +123,11 @@ class Board(threading.Thread):
                 
                 self._ticks += 1
                 if self._ticks >= head['tick_offset']:
-                    self.set_container_position(head['index'], head['angle'])
+                    if head['open']:
+                        self._containers[head['index']].open()
+                    else: 
+                        self._containers[head['index']].close()
+                        
                     self._command_queue.pop(0)   # remove first element
                     self._reset_queue()
                 
@@ -138,4 +137,6 @@ class Board(threading.Thread):
             
             elapsed = time.time() - now
             time.sleep(TICK_RATE - (elapsed if elapsed <= TICK_RATE else 0))
+    
+        quit()
             

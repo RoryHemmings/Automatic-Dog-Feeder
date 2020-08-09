@@ -17,14 +17,19 @@ def generate_command(index, angle, length=5):
     return command
 
 class Container:
-    def __init__(self, parent_board, index):
+    def __init__(self, parent_board, index, MAX_ANGLE=90):
         self._parent_board = parent_board
         self._angle = 0
         self._index = index
+        
+        self._MAX_ANGLE = MAX_ANGLE
     
-    def open_container(self):
-        pass
+    def open(self):
+        self.set_position(1)
+    
+    def close(self):
+        self.set_position(0)
     
     def set_position(self, pos):
-        self._angle = round(180 * pos)
+        self._angle = round(self._MAX_ANGLE * pos)
         self._parent_board.write_to_serial(generate_command(self._index, self._angle))
