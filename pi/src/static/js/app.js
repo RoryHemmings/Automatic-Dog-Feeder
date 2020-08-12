@@ -96,14 +96,14 @@ class guiObject {
     }
 
     // Both functions pass settings json object through each guiObject
-    applySettings(settings) { }     // Sends settings to back end to update config files
-    updateSettings(settings) { }    // Modifies settings on front end
+    applySettings(settings) {} // Sends settings to back end to update config files
+    updateSettings(settings) {} // Modifies settings on front end
 
-    onPress() { }
-    onRelease() { }
+    onPress() {}
+    onRelease() {}
 
-    update() { }
-    draw() { }
+    update() {}
+    draw() {}
 }
 
 // class guiGroup extends guiObject {
@@ -133,7 +133,7 @@ class SliderHandle {
         if (!inverted) this._parent.updatePosition(1);
     }
 
-    setY(y) {
+    setY(y, useCallback = true) {
         if (y < this._initY) y = this._initY;
         else if (y > (this._initY + this._parent.height)) y = (this._initY + this._parent.height);
         this._y = y - this._h / 2;
@@ -144,9 +144,11 @@ class SliderHandle {
         else
             newPos = 1 - (y - this._initY) / this._parent.height;
 
-        newPos = Math.round(newPos * 100) / 100; // Round up to the nearest 10th
-        if (this._parent.position != newPos) {
-            this._parent.updatePosition(newPos);
+        if (useCallback) {
+            newPos = Math.round(newPos * 100) / 100; // Round up to the nearest 10th
+            if (this._parent.position != newPos) {
+                this._parent.updatePosition(newPos);
+            }
         }
     }
 
@@ -179,8 +181,8 @@ class Slider extends guiObject {
         this._position = position;
 
         this._colorScheme = colorScheme;
-        
-        this._sliderHandle = new SliderHandle(this, x, y, handleWidth, handleHeight, colorScheme.contrast);
+
+        this._sliderHandle = new SliderHandle(this, x, y, handleWidth, handleHeight, colorScheme.contrast, true);
     }
 
     onClick() {}
@@ -197,12 +199,15 @@ class Slider extends guiObject {
         this._sliderHandle.update();
     }
 
-    updatePosition(pos, use_callback=true) {
+    updateSliderHandlePosition(pos) {
+        if (this._sliderHandle != undefined)
+            this._sliderHandle.setY(this._genYCoord(pos), false);
+    }
+
+    updatePosition(pos) {
         this._position = pos;
-        //this._sliderHandle.setY();
-        //setContainerPanelPosition(0, this._position);
-        if (use_callback)
-            this._callback(this);
+
+        this._callback(this);
     }
 
     draw() {
@@ -362,20 +367,15 @@ class ContainerPanel extends guiObject {
         this._diagram = new Diagram(this._genXCoord(0.5), this._genYCoord(0.58), this._genWidth(0.25), this._genHeight(0.1), 50);
 
         this._positionSlider = guiManager.createCustomSlider(this._genXCoord(0.15), this._genYCoord(0.05), this._genHeight(0.9), s => {
-            this._diagram.updatePosition(s.position);
             setContainerPanelPosition(index, s.position);
         }, this._colorScheme);
 
         this._feedButton = guiManager.createCustomButton('feed', this._genXCoord(0.5), this._genYCoord(0.85), this._genWidth(0.4), this._genHeight(0.1), b => {
-            this._positionSlider.updatePosition(1, false);
-            this._diagram.updatePosition(1);
             feed(this._index);
         }, this._colorScheme);
 
         this._foodSwitch = guiManager.createCustomSwitch('Big', 'Small', this._genXCoord(0.3), this._genYCoord(0.25),
-            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {
-                console.log('switch');
-            }, this._colorScheme);
+            this._genWidth(0.4), this._genWidth(0.25) * 0.5, s => {}, this._colorScheme);
     }
 
     applySettings(settings) {
@@ -390,7 +390,16 @@ class ContainerPanel extends guiObject {
     }
 
     update() {
-        this._diagram.update();
+        fetch(`/get-container-position/?index=${this._index}`)
+        .then(res => res.json())
+        .then(data => {
+            // if (data.position != this._positionSlider.position) {
+            //     this._positionSlider.updateSliderHandlePosition(data.position)
+            // }
+            if (data.position != this._diagram.position) {
+                this._diagram.updatePosition(data.position)
+            }
+        });
     }
 
     draw() {
@@ -661,7 +670,6 @@ function mouseReleased() {
 }
 
 function feed(index) {
-    
     fetch(`/feed/${index}`)
     // .then(res => res.json())
     // .then(data => {
@@ -670,7 +678,9 @@ function feed(index) {
 }
 
 function applySettings() {
-    let settings = {containers: [{}, {}, {}]};
+    let settings = {
+        containers: [{}, {}, {}]
+    };
     guiManager.applySettings(settings);
     fetch('/update-settings', {
         method: 'POST',

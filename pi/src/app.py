@@ -14,6 +14,8 @@ import board
 import handler
 import light
 
+import json
+
 import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -49,6 +51,14 @@ def set_container_position():
     global handler
     handler.set_container_position(int(request.args['index']), float(request.args['position']))
     return '200'
+
+@app.route('/get-container-position/')
+def get_container_position():
+    global handler
+    pos = handler.get_apparent_container_position(int(request.args['index']))
+    res = {'position': pos}
+    res = json.dumps(res)
+    return json.loads(res)
 
 def run_server():
     app.run(port=port, host=hostname)

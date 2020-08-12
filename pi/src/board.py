@@ -93,6 +93,9 @@ class Board(threading.Thread):
     # for low level control
     def set_container_position(self, index, pos):
         self._containers[index].set_position(pos)
+        
+    def get_apparent_container_position(self, index):
+        return self._containers[index].get_apparent_pos()
 
     # for extra-low level control
     def write_to_serial(self, message):
@@ -106,11 +109,10 @@ class Board(threading.Thread):
             line = read_line(self.ser)
         
         if len(line) > 0:
-            if line[0] == ':' and line[1] == '0':
-                print('Debug: ', line)
+            if line[0] == 'p':
+                self._containers[int(line[1])].set_apparent_pos(float(line[3:]))
             else:
-                pass
-                # print(line)
+                print(line)
 
     def run(self):
         while self._running:

@@ -43,6 +43,9 @@ class Handler(threading.Thread):
     def set_container_position(self, index, pos):
         self._board.set_container_position(index, pos)
         
+    def get_apparent_container_position(self, index):
+        return self._board.get_apparent_container_position(index)
+        
     def run(self):
         pass
         # while self._running:

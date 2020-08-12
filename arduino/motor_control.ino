@@ -29,7 +29,7 @@ public:
     Container(uint8_t index, int interval) 
         : index(index)
         , updateInterval(interval)
-        , increment(1)
+        , increment(3)
         { }
 
     void SetTarget(uint8_t t)
@@ -42,7 +42,7 @@ public:
         servo.attach(motorPins[index], 1000, 2000);
     }
 
-    void Detach() 
+    void Detach()
     {
         servo.detach();
     }
@@ -54,6 +54,10 @@ public:
                 lastUpdate = millis();
                 pos += (pos < target) ? increment : -increment;
                 servo.write(pos);
+                Serial.print('p');
+                Serial.print(index);
+                Serial.print(':');
+                Serial.println(pos);
             }
         }
     }
