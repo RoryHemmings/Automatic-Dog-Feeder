@@ -106,7 +106,11 @@ class Board(threading.Thread):
             line = read_line(self.ser)
         
         if len(line) > 0:
-            print(line)
+            if line[0] == ':' and line[1] == '0':
+                print('Debug: ', line)
+            else:
+                pass
+                # print(line)
 
     def run(self):
         while self._running:

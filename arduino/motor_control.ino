@@ -14,11 +14,61 @@
 
 #define INPUT_SIZE 5
 
-const uint8_t numMotors = 3;
-const uint8_t motorPins[numMotors] = { 11, 9, 5 };
-// const uint8_t motorPins[numMotors] = { 11, 10, 9, 6, 5, 3 };
+const uint8_t numMotors = 2;
+const uint8_t motorPins[numMotors] = { 11, 9 };
 
-Servo motors[numMotors];
+// Servo motors[numMotors];
+
+class Container;
+
+Container *containers[numMotors];
+
+class Container
+{
+public:
+    Container(uint8_t index, int interval) 
+        : index(index)
+        , updateInterval(interval)
+        , increment(1)
+        { }
+
+    void SetTarget(uint8_t t)
+    {
+        target = t;
+    }
+
+    void Attach()
+    {
+        servo.attach(motorPins[index], 1000, 2000);
+    }
+
+    void Detach() 
+    {
+        servo.detach();
+    }
+
+    void Update()
+    {
+        if (pos != target) {
+            if ((millis() - lastUpdate) > updateInterval) {
+                lastUpdate = millis();
+                pos += (pos < target) ? increment : -increment;
+                servo.write(pos);
+            }
+        }
+    }
+
+private:
+    uint8_t index;
+
+    Servo servo;
+    uint8_t pos;
+    uint8_t target;
+
+    uint8_t increment;
+    int updateInterval;
+    unsigned long lastUpdate;
+};
 
 uint8_t charToInt(char n)
 {
@@ -35,7 +85,8 @@ void getInput()
     }
 }
 
-void parseCommand(char* command) {
+void parseCommand(char* command)
+{
     char* seperator = strchr(command, ':'); // Find seperator character
 
     if (seperator != NULL) {    // Check that command contains seperator character
@@ -47,13 +98,15 @@ void parseCommand(char* command) {
     }
 }
 
-void setMotor(uint8_t index, uint8_t angle) {
+void setMotor(uint8_t index, uint8_t angle)
+{
+    containers[index]->SetTarget(angle);
     // Serial.print("IA: ");
     // Serial.print(index);
     // Serial.print(" ");
     // Serial.println(angle);
-    motors[index].write(angle);
-    delay(5);
+    // motors[index].write(angle);
+    // delay(5);
 }
 
 void setup()
@@ -61,11 +114,20 @@ void setup()
     Serial.begin(9600);
 
     for (uint8_t i = 0; i < numMotors; i++) {
-        motors[i].attach(motorPins[i], 1000, 2000);
+        containers[i] = new Container(i, 1);
+        containers[i]->Attach();
     }
+
+    // for (uint8_t i = 0; i < numMotors; i++) {
+    //     motors[i].attach(motorPins[i], 1000, 2000);
+    // }
 }
 
 void loop()
-{   
+{
     getInput();
+
+    for (uint8_t i = 0; i < numMotors; i++) {
+        containers[i]->Update();
+    }
 }

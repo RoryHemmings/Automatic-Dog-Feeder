@@ -179,7 +179,7 @@ class Slider extends guiObject {
         this._position = position;
 
         this._colorScheme = colorScheme;
-
+        
         this._sliderHandle = new SliderHandle(this, x, y, handleWidth, handleHeight, colorScheme.contrast);
     }
 
@@ -197,10 +197,12 @@ class Slider extends guiObject {
         this._sliderHandle.update();
     }
 
-    updatePosition(pos) {
+    updatePosition(pos, use_callback=true) {
         this._position = pos;
+        //this._sliderHandle.setY();
         //setContainerPanelPosition(0, this._position);
-        this._callback(this);
+        if (use_callback)
+            this._callback(this);
     }
 
     draw() {
@@ -365,6 +367,8 @@ class ContainerPanel extends guiObject {
         }, this._colorScheme);
 
         this._feedButton = guiManager.createCustomButton('feed', this._genXCoord(0.5), this._genYCoord(0.85), this._genWidth(0.4), this._genHeight(0.1), b => {
+            this._positionSlider.updatePosition(1, false);
+            this._diagram.updatePosition(1);
             feed(this._index);
         }, this._colorScheme);
 
@@ -657,6 +661,7 @@ function mouseReleased() {
 }
 
 function feed(index) {
+    
     fetch(`/feed/${index}`)
     // .then(res => res.json())
     // .then(data => {
@@ -677,7 +682,7 @@ function applySettings() {
         if (res.status == 200) {
             getSettings();
         }
-    })
+    });
 }
 
 function getSettings() {
