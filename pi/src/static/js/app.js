@@ -340,7 +340,7 @@ class Diagram extends guiObject {
         line(0, this._height, this._width, this._height);
 
         translate(this._width - temp, 0);
-        rotate(radians(-(this._maxAngle - this._angle)));
+        rotate(radians(-(this._angle)));
         line(0, 0, temp, this._height);
         pop();
     }

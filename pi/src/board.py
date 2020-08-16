@@ -100,7 +100,12 @@ class Board(threading.Thread):
     # for extra-low level control
     def write_to_serial(self, message):
         message = str(message).encode('utf-8')
-        self.ser.write(message)
+        
+        try:
+            self.ser.write(message)
+        except serial.serialutil.SerialTimeoutException as e:
+            print(e)
+            quit()
 
     # for extra-low level reading
     def read_from_serial(self):
@@ -110,9 +115,11 @@ class Board(threading.Thread):
         
         if len(line) > 0:
             if line[0] == 'p':
+                #if int(line[1]) == 0: print(line)
                 self._containers[int(line[1])].set_apparent_pos(float(line[3:]))
             else:
                 print(line)
+                # pass
 
     def run(self):
         while self._running:

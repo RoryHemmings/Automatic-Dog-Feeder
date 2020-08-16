@@ -26,10 +26,12 @@ Container *containers[numMotors];
 class Container
 {
 public:
-    Container(uint8_t index, int interval) 
+    Container(uint8_t index, int interval, uint8_t increment, uint8_t init_pos)
         : index(index)
         , updateInterval(interval)
-        , increment(3)
+        , increment(increment)
+        , target(init_pos)
+        , pos(init_pos - 1)     // Initiates a move to init_pos
         { }
 
     void SetTarget(uint8_t t)
@@ -48,7 +50,7 @@ public:
     }
 
     void Update()
-    {
+    {   
         if (pos != target) {
             if ((millis() - lastUpdate) > updateInterval) {
                 lastUpdate = millis();
@@ -118,7 +120,7 @@ void setup()
     Serial.begin(9600);
 
     for (uint8_t i = 0; i < numMotors; i++) {
-        containers[i] = new Container(i, 1);
+        containers[i] = new Container(i, 10, 1, 180);
         containers[i]->Attach();
     }
 
