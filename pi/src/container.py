@@ -17,7 +17,7 @@ def generate_command(index, angle, length=5):
     return command
 
 class Container:
-    def __init__(self, parent_board, index, MAX_ANGLE=90, MOTOR_PARALLEL_POS=180):
+    def __init__(self, parent_board, index, MAX_ANGLE=135, MOTOR_PARALLEL_POS=180):
         self._parent_board = parent_board
         self._apparent_pos = 0  # Position as read from board
         self._index = index

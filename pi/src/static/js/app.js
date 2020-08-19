@@ -469,7 +469,7 @@ class SettingsPanel extends guiObject {
     }
 
     applySettings(settings) {
-        settings.feeding_time = this._feedingTime.value();
+        settings.feeding_time = this._feedingTime.value().concat(this._amPmSwitch.currentOption == 0 ? 'AM' : 'PM');    // Concatanate AM or PM
         settings.auto_feed = this._autoFeedSwitch.currentOption;
 
         for (let i = 0; i < this._dogNames.length; i++) {
@@ -478,8 +478,16 @@ class SettingsPanel extends guiObject {
     }
 
     updateSettings(settings) {
+        // Cut off AM/PM part of the time string as to not confuse the user. Also, set the AM/PM switch
+        if (settings.feeding_time.substr(settings.feeding_time.length - 2, 2).toUpperCase() == 'AM' 
+                || settings.feeding_time.substr(settings.feeding_time.length - 2, 2).toUpperCase() == 'PM') {
+            this._amPmSwitch.currentOption = settings.feeding_time.substr(settings.feeding_time.length - 2, 2).toUpperCase() == 'AM' ? 0 : 1;
+            settings.feeding_time = settings.feeding_time.slice(0, settings.feeding_time.length - 2);
+        }
+
         this._feedingTime.value(settings.feeding_time);
         this._autoFeedSwitch.currentOption = settings.auto_feed;
+
         for (let i = 0; i < this._dogNames.length; i++) {
             this._dogNames[i].value(settings.containers[i].name);
         }
@@ -677,11 +685,37 @@ function feed(index) {
     // });
 }
 
+function checkValidity(settings) {
+    // Replace all spaces for consistancy
+    settings.feeding_time.replace(/\s/g, '');
+
+    if (settings.feeding_time.length > 7) return false;
+
+    // If feeding_time doesn't have a 0 in the front, then add one
+    if (settings.feeding_time.length != 7) {
+        settings.feeding_time = '0'.concat(settings.feeding_time);
+    }
+
+    let hour = Number(settings.feeding_time.substr(0, 2));
+    let minute = Number(settings.feeding_time.substr(3, 2));
+    if (!(hour >= 0 && hour <= 12) || !(minute >= 0 && minute <= 59))
+        return false;
+
+    return true;
+}
+
 function applySettings() {
     let settings = {
         containers: [{}, {}, {}]
     };
+
     guiManager.applySettings(settings);
+
+    if (!checkValidity(settings)) {
+        alert("Settings are not valid");
+        return;
+    }
+
     fetch('/update-settings', {
         method: 'POST',
         headers: {

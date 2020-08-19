@@ -1,17 +1,1 @@
-{
-    "containers": [{
-        "food_amount": "15",
-        "food_type": 1,
-        "name": "Taggie"
-    }, {
-        "food_amount": "8",
-        "food_type": 1,
-        "name": "Pip"
-    }, {
-        "food_amount": "12",
-        "food_type": 0,
-        "name": "Blu"
-    }],
-    "feeding_time": "7:00",
-    "auto_feed": 0
-}
+{"containers": [{"food_amount": "1", "food_type": 0, "name": "Taggie"}, {"food_amount": "2", "food_type": 0, "name": "Pip"}, {"food_amount": "3", "food_type": 1, "name": "Blu"}], "feeding_time": "07:00AM", "auto_feed": 0}
