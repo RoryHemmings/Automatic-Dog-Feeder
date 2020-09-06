@@ -6,7 +6,10 @@ parser.add_argument('-n', '--hostname', metavar='<hostname>', required=True, hel
 args = vars(parser.parse_args()) # create dictionary of arguments
 
 from flask import Flask, render_template, request, Response
+from flask_socketio import SocketIO, send, emit
+
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 from multiprocessing import Process
 
@@ -25,17 +28,57 @@ def home():
     global handler
     return render_template('home.html')
 
-@app.route('/get-settings/')
-def get_settings():
-    return handler.settings.json()
+# @app.route('/get-settings/')
+# def get_settings():
+#     return handler.settings.json()
 
-@app.route('/update-settings/', methods=['POST'])
-def update_settings():
+# @app.route('/update-settings/', methods=['POST'])
+# def update_settings():
+#     global handler
+#     handler.settings.update(request.json)
+#     return Response(status='200')
+
+# @app.route('/feed/<index>')
+# def feed(index):
+#     global handler
+#     index = int(index)
+#     if index >= 0:
+#         handler.feed(index)
+#     else:
+#         handler.feed_all()
+        
+#     return Response(status='200')
+
+# @app.route('/set-container-position/')
+# def set_container_position():
+#     global handler
+#     handler.set_container_position(int(request.args['index']), float(request.args['position']))
+#     return '200'
+
+# @app.route('/get-container-position/')
+# def get_container_position():
+#     global handler
+#     pos = handler.get_apparent_container_position(int(request.args['index']))
+#     res = {'position': pos}
+#     res = json.dumps(res)
+#     return json.loads(res)
+
+@socketio.on('connect-event')
+def on_my_event(message):
+    print(message)
+    
+@socketio.on('set-container-position')
+def set_container_position(data):
     global handler
-    handler.settings.update(request.json)
-    return Response(status='200')
+    handler.set_container_position(int(data['index']), float(data['position']))
 
-@app.route('/feed/<index>')
+@socketio.on('get-container-position')
+def get_container_position(index):
+    global handler
+    pos = handler.get_apparent_container_position(int(index))
+    return {'position': pos}
+
+@socketio.on('feed')
 def feed(index):
     global handler
     index = int(index)
@@ -44,29 +87,32 @@ def feed(index):
     else:
         handler.feed_all()
         
-    return Response(status='200')
-
-@app.route('/set-container-position/')
-def set_container_position():
-    global handler
-    handler.set_container_position(int(request.args['index']), float(request.args['position']))
     return '200'
 
-@app.route('/get-container-position/')
-def get_container_position():
+@socketio.on('get-settings')
+def get_settings():
+    return handler.settings.json()
+
+@socketio.on('update-settings')
+def update_settings(settings):
     global handler
-    pos = handler.get_apparent_container_position(int(request.args['index']))
-    res = {'position': pos}
-    res = json.dumps(res)
-    return json.loads(res)
+    handler.settings.update(json.loads(settings['body']))
+    return "200"
 
 def run_server():
-    app.run(port=port, host=hostname)
+    socketio.run(app, port=port, host=hostname)
+    # app.run(port=port, host=hostname)
 
 def run_handler():
     global handler
-    handler = handler.Handler()
+    handler = handler.Handler(debug_mode=True)
     handler.start()
+    
+# def shutdown_server():
+#     func = request.environ.get('werkzeug.server.shutdown')
+#     if func is None:
+#         raise RuntimeError('Not running with the Werkzeug Server')
+#     func()
 
 if __name__ == '__main__':
     global port, hostname

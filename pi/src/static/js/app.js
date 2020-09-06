@@ -3,6 +3,8 @@ const numContainerPanels = 3;
 
 let guiManager;
 
+let socket;
+
 let primary_font;
 
 const colors = {
@@ -390,15 +392,19 @@ class ContainerPanel extends guiObject {
     }
 
     update() {
-        fetch(`/get-container-position/?index=${this._index}`)
-        .then(res => res.json())
-        .then(data => {
-            // if (data.position != this._positionSlider.position) {
-            //     this._positionSlider.updateSliderHandlePosition(data.position)
-            // }
-            if (data.position != this._diagram.position) {
-                this._diagram.updatePosition(data.position)
-            }
+        // fetch(`/get-container-position/?index=${this._index}`)
+        // .then(res => res.json())
+        // .then(data => {
+        //     // if (data.position != this._positionSlider.position) {
+        //     //     this._positionSlider.updateSliderHandlePosition(data.position)
+        //     // }
+        //     if (data.position != this._diagram.position) {
+        //         this._diagram.updatePosition(data.position)
+        //     }
+        // });
+
+        socket.emit('get-container-position', this._index, data => {
+            this._diagram.updatePosition(data.position)
         });
     }
 
@@ -619,6 +625,11 @@ function setup() {
     height = window.innerHeight;
     createCanvas(width, height);
 
+    socket = io(window.location.href);
+    socket.on('connect', function() {
+        socket.emit('connect-event', 'Connection incoming');
+    });
+
     guiManager = new GuiManager();
 
     let cs = [colorSchemes.RED, colorSchemes.PURPLE, colorSchemes.BLUE];
@@ -661,8 +672,9 @@ function genInputStyleString(scheme) {
 }
 
 function setContainerPanelPosition(index, position) {
-    const req = `/set-container-position/?index=${index}&position=${position}`;
-    fetch(req);
+    // const req = `/set-container-position/?index=${index}&position=${position}`;
+    // fetch(req);
+    socket.emit('set-container-position', {index: index, position: position});
 }
 
 function mouseClicked() {
@@ -678,11 +690,13 @@ function mouseReleased() {
 }
 
 function feed(index) {
-    fetch(`/feed/${index}`)
+    // fetch(`/feed/${index}`)
     // .then(res => res.json())
     // .then(data => {
     //     console.log(data);
     // });
+
+    socket.emit('feed', index);
 }
 
 function checkValidity(settings) {
@@ -716,23 +730,34 @@ function applySettings() {
         return;
     }
 
-    fetch('/update-settings', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+    // fetch('/update-settings', {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify(settings)
+    // }).then(res => {
+    //     if (res.status == 200) {
+    //         getSettings();
+    //     }
+    // });
+    socket.emit('update-settings', {
         body: JSON.stringify(settings)
-    }).then(res => {
-        if (res.status == 200) {
+    }, res => {
+        if (res == 200) {
             getSettings();
+            console.log("Settings Updated");
         }
     });
 }
 
 function getSettings() {
-    fetch('/get-settings')
-        .then(res => res.json())
-        .then(settings => {
-            guiManager.updateSettings(settings);
-        });
+    // fetch('/get-settings')
+    //     .then(res => res.json())
+    //     .then(settings => {
+    //         guiManager.updateSettings(settings);
+    //     });
+    socket.emit('get-settings', res => {
+        guiManager.updateSettings(res);
+    });
 }

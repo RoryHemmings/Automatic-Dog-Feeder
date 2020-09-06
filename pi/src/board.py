@@ -33,11 +33,14 @@ def read_line(ser):
         return '\n' + str(ser.readline()) + '\n'
 
 class Board(threading.Thread):
-    def __init__(self, port, baud_rate, timeout, num_motors=1):
+    def __init__(self, port, baud_rate, timeout, num_motors, debug_mode):
         threading.Thread.__init__(self)
         
-        self.ser = serial.Serial(port, baud_rate, timeout=timeout)
-        self.ser.flush()
+        if debug_mode:
+            self.ser = serial.Serial(port, baud_rate, timeout=timeout)
+            self.ser.flush()
+        else:
+            self.ser = 0
     
         self._containers = []
         for i in range(num_motors):
@@ -101,17 +104,21 @@ class Board(threading.Thread):
     def write_to_serial(self, message):
         message = str(message).encode('utf-8')
         
-        try:
-            self.ser.write(message)
-        except serial.serialutil.SerialTimeoutException as e:
-            print(e)
-            quit()
+        if self.ser != 0:
+            try:
+                self.ser.write(message)
+            except serial.serialutil.SerialTimeoutException as e:
+                print(e)
+                quit()
+        else:
+            print("Debug Message:", message)
 
     # for extra-low level reading
     def read_from_serial(self):
         line = ''
-        if self.ser.in_waiting > 0:
-            line = read_line(self.ser)
+        if self.ser != 0:
+            if self.ser.in_waiting > 0:
+                line = read_line(self.ser)
         
         if len(line) > 0:
             if line[0] == 'p':
@@ -127,8 +134,6 @@ class Board(threading.Thread):
             
             # input management
             self.read_from_serial()
-            if keyboard.is_pressed('f'):
-                self._running = False
             
             # output managment
             if (len(self._command_queue) > 0):
@@ -150,6 +155,7 @@ class Board(threading.Thread):
             
             elapsed = time.time() - now
             time.sleep(TICK_RATE - (elapsed if elapsed <= TICK_RATE else 0))
-    
-        quit()
+        
+    def stop(self):
+        self._running = False
             
