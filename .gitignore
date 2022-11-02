@@ -1,0 +1,4 @@
+pi/env/
+pi/src/__pycache__/
+pi/src/static/js/gtr.ttf
+pi/src/static/js/p5.min.js
